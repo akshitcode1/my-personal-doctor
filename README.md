@@ -479,6 +479,6 @@ The `route_to_specialists()` function in `graph/edges.py` returns a `List[Send]`
 
 <div align="center">
 
-Built with ❤️ using Claude API · FastAPI · React · LangGraph · ChromaDB · Supabase
+Built with using Claude API · FastAPI · React · LangGraph · ChromaDB · Supabase
 
 </div>
