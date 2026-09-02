@@ -19,7 +19,7 @@
 
 ---
 
-## 📖 Table of Contents
+## Table of Contents
 
 - [What Is This?](#-what-is-this)
 - [Key Features](#-key-features)
@@ -37,17 +37,17 @@
 
 ---
 
-## 🤔 What Is This?
+## What Is This?
 
 **My Personal Doctor** is a full-stack AI health consultation platform. When you describe your symptoms, a fast triage agent (Claude Haiku) reads your query and automatically selects the most relevant medical specialists. Those specialists then run **in parallel** — each searching curated medical literature via RAG (Retrieval-Augmented Generation) — and their individual findings are synthesized by a senior Claude Sonnet agent into one clear, empathetic, patient-friendly response.
 
 Think of it as having a **panel of AI doctors consult on your case in real time**, right in your browser.
 
-> ⚠️ **For informational purposes only. Not a substitute for professional medical advice.**
+> **For informational purposes only. Not a substitute for professional medical advice.**
 
 ---
 
-## ✨ Key Features
+## Key Features
 
 | Feature | Description |
 |---|---|
@@ -63,7 +63,7 @@ Think of it as having a **panel of AI doctors consult on your case in real time*
 
 ---
 
-## ⚙️ How It Works
+## How It Works
 
 ```
 Your Message
@@ -248,7 +248,7 @@ personal-doctor/
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -373,7 +373,7 @@ ENVIRONMENT=development
 
 ---
 
-## 📚 RAG Data Ingestion
+## RAG Data Ingestion
 
 The RAG pipeline powers every specialist's medical knowledge:
 
@@ -422,7 +422,7 @@ The `docker-compose.yml` mounts `chroma_db/` and `rag_data/` as volumes so your 
 
 ---
 
-## 🏗️ Architecture Deep Dive
+## Architecture Deep Dive
 
 ### Singleton Pattern
 Three objects are created **once at startup** and reused across all requests:
@@ -466,7 +466,7 @@ The `route_to_specialists()` function in `graph/edges.py` returns a `List[Send]`
 
 ---
 
-## ⚠️ Disclaimer
+##  Disclaimer
 
 **My Personal Doctor is for informational and educational purposes only.**
 
