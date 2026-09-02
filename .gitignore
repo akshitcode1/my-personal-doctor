@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# Environment — NEVER commit real credentials
+.env
+.env.local
+*.env.local
+backend/.env
+frontend/.env
+
+# ChromaDB (large binary — don't commit)
+chroma_db/
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# RAG data (may be large)
+rag_data/**/*.txt
+
+# Logs
+*.log
+logs/
+
+# Uploads / temp
+backend/uploads/
+*.tmp
+
+# Python test/coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Secrets — extra safety net
+*.pem
+*.key
+secrets/
