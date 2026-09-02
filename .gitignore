@@ -34,6 +34,9 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Claude Code internal context — keep local only
+CLAUDE.md
+
 # RAG data (may be large)
 rag_data/**/*.txt
 
