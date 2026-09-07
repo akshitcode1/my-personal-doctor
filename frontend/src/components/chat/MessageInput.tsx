@@ -1,8 +1,9 @@
-import { useState, useRef, KeyboardEvent } from 'react'
-import { Send, Square, Paperclip, X, FileText } from 'lucide-react'
+import { useState, useRef, KeyboardEvent, useEffect } from 'react'
+import { Send, Square, Paperclip, X, FileText, Mic, MicOff, Phone } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useChatStore } from '../../stores/chatStore'
 import { useAgentStore } from '../../stores/agentStore'
+import { VoiceStatus, useVoiceStore } from '../../stores/voiceStore'
 import client from '../../api/client'
 
 interface Props {
@@ -11,6 +12,9 @@ interface Props {
   chatId: string
   isGenerating: boolean
   onDocumentSummary?: (summary: string, filename: string) => void
+  voiceStatus: VoiceStatus
+  onMicToggle: () => void
+  onVoiceConversation: () => void
 }
 
 interface FilePreview {
@@ -27,13 +31,21 @@ const MODE_LABELS: Record<string, string> = {
   manual: 'Manual Specialists',
 }
 
-export default function MessageInput({ onSend, onStop, chatId, isGenerating, onDocumentSummary }: Props) {
+export default function MessageInput({ onSend, onStop, chatId, isGenerating, onDocumentSummary, voiceStatus, onMicToggle, onVoiceConversation }: Props) {
   const [value, setValue] = useState('')
   const [filePreview, setFilePreview] = useState<FilePreview | null>(null)
   const [uploading, setUploading] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const { addDocument, addMessage } = useChatStore()
   const { responseMode, manualSpecialists } = useAgentStore()
+  const { micTranscript, clearMicTranscript } = useVoiceStore()
+
+  // Apply STT transcript from mic-only mode into the textarea
+  useEffect(() => {
+    if (!micTranscript) return
+    setValue((prev) => prev ? `${prev} ${micTranscript}` : micTranscript)
+    clearMicTranscript()
+  }, [micTranscript, clearMicTranscript])
 
   const submit = () => {
     if (isGenerating) { onStop(); return }
@@ -194,6 +206,45 @@ export default function MessageInput({ onSend, onStop, chatId, isGenerating, onD
           <Paperclip size={17} />
         </button>
         <input ref={fileRef} type="file" accept=".pdf,image/*" style={{ display: 'none' }} onChange={handleFileSelect} />
+
+        {/* Mic button (STT → fills textarea) */}
+        <motion.button
+          onClick={onMicToggle}
+          disabled={isGenerating || voiceStatus === 'processing'}
+          title={voiceStatus === 'listening' ? 'Stop recording' : 'Speak your question'}
+          animate={voiceStatus === 'listening' ? { scale: [1, 1.15, 1] } : { scale: 1 }}
+          transition={{ duration: 0.8, repeat: voiceStatus === 'listening' ? Infinity : 0 }}
+          style={{
+            background: voiceStatus === 'listening' ? 'rgba(52,211,153,0.15)' : 'none',
+            border: voiceStatus === 'listening' ? '1px solid rgba(52,211,153,0.4)' : 'none',
+            borderRadius: 8, padding: '6px', cursor: isGenerating ? 'not-allowed' : 'pointer',
+            color: voiceStatus === 'listening' ? 'rgb(52,211,153)' : 'var(--text-muted)',
+            display: 'flex', alignItems: 'center', flexShrink: 0,
+            transition: 'color 0.15s, background 0.15s',
+            opacity: isGenerating || voiceStatus === 'processing' ? 0.4 : 1,
+          }}
+        >
+          {voiceStatus === 'listening' ? <MicOff size={17} /> : <Mic size={17} />}
+        </motion.button>
+
+        {/* Voice conversation toggle */}
+        <motion.button
+          onClick={onVoiceConversation}
+          disabled={isGenerating}
+          title="Start voice conversation"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          style={{
+            background: 'rgba(74,123,255,0.1)',
+            border: '1px solid rgba(74,123,255,0.25)',
+            borderRadius: 8, padding: '6px', cursor: isGenerating ? 'not-allowed' : 'pointer',
+            color: 'var(--accent-blue)',
+            display: 'flex', alignItems: 'center', flexShrink: 0,
+            opacity: isGenerating ? 0.4 : 1,
+          }}
+        >
+          <Phone size={15} />
+        </motion.button>
 
         {/* Textarea */}
         <textarea

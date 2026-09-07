@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.api.routes import auth, chats, documents, health, messages
+from backend.api.routes import auth, chats, documents, health, messages, voice
 from backend.api.websocket import websocket_endpoint
 from backend.config.settings import settings
 
@@ -24,5 +24,6 @@ app.include_router(auth.router, prefix="/api", tags=["auth"])
 app.include_router(chats.router, prefix="/api", tags=["chats"])
 app.include_router(messages.router, prefix="/api", tags=["messages"])
 app.include_router(documents.router, prefix="/api", tags=["documents"])
+app.include_router(voice.router, prefix="/api", tags=["voice"])
 
 app.add_api_websocket_route("/ws/{chat_id}", websocket_endpoint)

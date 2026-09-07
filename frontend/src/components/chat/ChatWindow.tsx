@@ -2,17 +2,28 @@ import { useEffect, useRef } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useChatStore } from '../../stores/chatStore'
 import { useWebSocket } from '../../hooks/useWebSocket'
+import { useVoice } from '../../hooks/useVoice'
+import { useVoiceStore } from '../../stores/voiceStore'
 import MessageBubble from './MessageBubble'
 import AgentConversation from './AgentConversation'
 import MessageInput from './MessageInput'
 import WelcomeScreen from './WelcomeScreen'
+import VoiceConversationOverlay from './VoiceConversationOverlay'
 import { useAgentStore } from '../../stores/agentStore'
 
 export default function ChatWindow() {
   const { activeChatId, messages, documents } = useChatStore()
   const { sendMessage, stopGeneration } = useWebSocket(activeChatId)
   const { phase, isGenerating } = useAgentStore()
+  const { voiceStatus } = useVoiceStore()
   const bottomRef = useRef<HTMLDivElement>(null)
+
+  const {
+    startMicRecording,
+    stopMicManually,
+    enterConversationMode,
+    exitConversationMode,
+  } = useVoice({ onSendMessage: sendMessage })
 
   const isEmpty = messages.length === 0 && phase === 'idle'
 
@@ -36,6 +47,7 @@ export default function ChatWindow() {
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+      <VoiceConversationOverlay onExit={exitConversationMode} />
       {/* Document banner */}
       {documents.length > 0 && (
         <div style={{
@@ -84,6 +96,9 @@ export default function ChatWindow() {
           onStop={stopGeneration}
           chatId={activeChatId}
           isGenerating={isGenerating}
+          voiceStatus={voiceStatus}
+          onMicToggle={() => voiceStatus === 'listening' ? stopMicManually() : startMicRecording()}
+          onVoiceConversation={enterConversationMode}
         />
       </div>
     </div>

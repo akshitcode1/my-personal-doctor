@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     chroma_db_path: str = str(Path(__file__).resolve().parent.parent.parent / "chroma_db")
     frontend_url: str = "http://localhost:5173"
     environment: str = "development"
+    # Voice
+    deepgram_api_key: str = ""
+    elevenlabs_api_key: str = ""
+    elevenlabs_voice_id: str = "pNInz6obpgDQGcFmaJgB"
 
     class Config:
         env_file = str(_ENV_FILE)

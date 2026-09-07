@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Trash2, MessageCircle, Pencil, Check, X } from 'lucide-react'
+import { Plus, Trash2, MessageCircle, Pencil, Check, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useChat } from '../../hooks/useChat'
 import client from '../../api/client'
 import { useChatStore } from '../../stores/chatStore'
@@ -12,6 +12,7 @@ export default function ChatSidebar() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
+  const [collapsed, setCollapsed] = useState(false)
   const editRef = useRef<HTMLInputElement>(null)
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
@@ -42,47 +43,84 @@ export default function ChatSidebar() {
   const cancelEdit = () => setEditingId(null)
 
   return (
-    <div style={{
-      width: 248,
-      flexShrink: 0,
-      display: 'flex',
-      flexDirection: 'column',
-      borderRight: '1px solid rgba(74,123,255,0.12)',
-      background: 'linear-gradient(180deg, rgba(225,237,255,0.98) 0%, rgba(215,230,255,0.97) 100%)',
-      backdropFilter: 'blur(20px)',
-      overflow: 'hidden',
-    }}>
-      {/* Section label */}
-      <div style={{ padding: '14px 14px 4px', display: 'flex', alignItems: 'center', gap: 6 }}>
-        <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.7px' }}>
-          Consultations
-        </span>
+    <motion.div
+      animate={{ width: collapsed ? 52 : 248 }}
+      transition={{ type: 'spring', stiffness: 320, damping: 30 }}
+      style={{
+        flexShrink: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        borderRight: '1px solid rgba(74,123,255,0.12)',
+        background: 'linear-gradient(180deg, rgba(225,237,255,0.98) 0%, rgba(215,230,255,0.97) 100%)',
+        backdropFilter: 'blur(20px)',
+        overflow: 'hidden',
+        position: 'relative',
+      }}
+    >
+      {/* Section label + collapse toggle */}
+      <div style={{ padding: '14px 10px 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+        <AnimatePresence>
+          {!collapsed && (
+            <motion.span
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.7px', whiteSpace: 'nowrap' }}
+            >
+              Consultations
+            </motion.span>
+          )}
+        </AnimatePresence>
+        <motion.button
+          onClick={() => setCollapsed((c) => !c)}
+          whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+          style={{
+            background: 'rgba(74,123,255,0.08)', border: '1px solid rgba(74,123,255,0.18)',
+            borderRadius: 8, padding: '4px 6px', cursor: 'pointer',
+            color: 'var(--accent-blue)', display: 'flex', alignItems: 'center',
+            flexShrink: 0, marginLeft: collapsed ? 'auto' : 0,
+          }}
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {collapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
+        </motion.button>
       </div>
 
       {/* New Chat Button */}
-      <div style={{ padding: '4px 10px 8px' }}>
+      <div style={{ padding: '4px 8px 8px', flexShrink: 0 }}>
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.97 }}
           onClick={newChat}
+          title="New Consultation"
           style={{
             width: '100%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'center', gap: collapsed ? 0 : 8,
             padding: '10px',
             background: 'linear-gradient(135deg, #4A7BFF, #6366f1)',
             border: 'none', borderRadius: 12,
             color: '#fff', fontSize: 13, fontWeight: 600,
             cursor: 'pointer',
             boxShadow: '0 4px 14px rgba(74,123,255,0.30)',
+            overflow: 'hidden', whiteSpace: 'nowrap',
           }}
         >
-          <Plus size={15} />
-          New Consultation
+          <Plus size={15} style={{ flexShrink: 0 }} />
+          <AnimatePresence>
+            {!collapsed && (
+              <motion.span
+                initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }}
+                transition={{ duration: 0.15 }}
+                style={{ overflow: 'hidden', display: 'inline-block' }}
+              >
+                New Consultation
+              </motion.span>
+            )}
+          </AnimatePresence>
         </motion.button>
       </div>
 
-      {/* Chat List */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '4px 8px 8px' }}>
+      {/* Chat List — hidden when collapsed */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '4px 8px 8px', opacity: collapsed ? 0 : 1, transition: 'opacity 0.15s', pointerEvents: collapsed ? 'none' : 'auto' }}>
         {chats.length === 0 && (
           <div style={{ textAlign: 'center', padding: '40px 16px' }}>
             <div style={{ fontSize: 28, marginBottom: 8 }}>💬</div>
@@ -227,6 +265,6 @@ export default function ChatSidebar() {
           ))}
         </AnimatePresence>
       </div>
-    </div>
+    </motion.div>
   )
 }
