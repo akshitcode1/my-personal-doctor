@@ -25,6 +25,7 @@
 - [Key Features](#-key-features)
 - [How It Works](#-how-it-works)
 - [App Screenshots](#-app-screenshots)
+- [Voice Mode](#-voice-mode)
 - [Tech Stack](#-tech-stack)
 - [Specialist Agents](#-specialist-agents)
 - [Project Structure](#-project-structure)
@@ -59,6 +60,7 @@ Think of it as having a **panel of AI doctors consult on your case in real time*
 | **PDF Upload** | Attach lab reports or medical documents — extracted text is injected into the consultation |
 | **Chat History** | All consultations are persisted and resumable |
 | **User Profile** | Save your medical history/allergies so all specialists have context |
+| **Voice Mode** | Speak your symptoms and hear the answer read back — full hands-free consultation |
 | **Secure Auth** | Email/password + Google OAuth via Supabase |
 
 ---
@@ -169,6 +171,24 @@ All past consultations are saved in the sidebar, organized by topic, and resumab
 Set your display name, phone, and optionally paste your medical history or upload documents — this context is automatically injected into every consultation.
 
 ![My Profile](Screenshots/MyProfile.png)
+
+---
+
+## 🎙️ Voice Mode
+
+Voice mode lets you have a full hands-free medical consultation — speak your symptoms and hear the synthesized answer read back to you.
+
+### Mic & Call Controls
+The mic button and call icon appear directly in the message input. One click opens the voice overlay.
+
+![Mic and Call Option](Screenshots/Mic%20and%20call%20option.png)
+
+---
+
+### Voice Conversation Interface
+A live overlay shows which agents are active, streams transcription in real time, and reads the final synthesis response back as audio.
+
+![Call Interface](Screenshots/Calll%20interface.png)
 
 ---
 
