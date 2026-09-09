@@ -28,11 +28,33 @@ interface Props {
   isParallel?: boolean
 }
 
+function ConfidenceBar({ confidence }: { confidence: number }) {
+  const pct = Math.round(confidence * 100)
+  const color = pct >= 75 ? '#50dc8c' : pct >= 50 ? '#4A7BFF' : '#ffc350'
+  return (
+    <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid rgba(74,123,255,0.08)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+        <span style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.3px' }}>CONTRIBUTION</span>
+        <span style={{ fontSize: 10, fontWeight: 700, color, fontVariantNumeric: 'tabular-nums' }}>{pct}%</span>
+      </div>
+      <div style={{ height: 3, background: 'rgba(74,123,255,0.08)', borderRadius: 99, overflow: 'hidden' }}>
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.8, ease: 'easeOut' }}
+          style={{ height: '100%', background: color, borderRadius: 99 }}
+        />
+      </div>
+    </div>
+  )
+}
+
 export default function AgentCard({ agentKey, state, isParallel }: Props) {
-  const { status, displayName, thinkingStep, tokens } = state
+  const { status, displayName, thinkingStep, tokens, elapsedMs, tokenCount, confidence } = state
   const colors = STATUS_COLORS[status] ?? STATUS_COLORS.idle
   const icon = ICONS[agentKey] ?? '👨‍⚕️'
   const isActive = status === 'streaming' || status === 'thinking'
+  const isDone = status === 'complete'
 
   return (
     <motion.div
@@ -55,7 +77,7 @@ export default function AgentCard({ agentKey, state, isParallel }: Props) {
         overflow: 'hidden',
       }}
     >
-      {/* Active shimmer on streaming */}
+      {/* Shimmer on streaming */}
       {status === 'streaming' && (
         <motion.div
           animate={{ x: ['-100%', '200%'] }}
@@ -73,14 +95,14 @@ export default function AgentCard({ agentKey, state, isParallel }: Props) {
         <div style={{
           position: 'absolute', top: 10, right: 12,
           fontSize: 9, fontWeight: 700, letterSpacing: '0.5px',
-          color: isActive ? '#4A7BFF' : status === 'complete' ? '#16a34a' : 'var(--text-muted)',
+          color: isActive ? '#4A7BFF' : isDone ? '#16a34a' : 'var(--text-muted)',
           textTransform: 'uppercase',
-          background: isActive ? 'rgba(74,123,255,0.10)' : status === 'complete' ? 'rgba(22,163,74,0.08)' : 'rgba(74,123,255,0.05)',
-          border: `1px solid ${isActive ? 'rgba(74,123,255,0.28)' : status === 'complete' ? 'rgba(22,163,74,0.22)' : 'rgba(74,123,255,0.10)'}`,
+          background: isActive ? 'rgba(74,123,255,0.10)' : isDone ? 'rgba(22,163,74,0.08)' : 'rgba(74,123,255,0.05)',
+          border: `1px solid ${isActive ? 'rgba(74,123,255,0.28)' : isDone ? 'rgba(22,163,74,0.22)' : 'rgba(74,123,255,0.10)'}`,
           padding: '2px 6px', borderRadius: 6,
           transition: 'all 0.3s',
         }}>
-          {status === 'complete' ? '✓ Done' : isActive ? 'Live' : 'Standby'}
+          {isDone ? '✓ Done' : isActive ? 'Live' : 'Standby'}
         </div>
       )}
 
@@ -90,7 +112,7 @@ export default function AgentCard({ agentKey, state, isParallel }: Props) {
           width: 38, height: 38, borderRadius: 11,
           background: isActive
             ? status === 'thinking' ? 'rgba(255,195,80,0.10)' : 'rgba(74,123,255,0.10)'
-            : status === 'complete' ? 'rgba(80,220,140,0.10)' : 'rgba(74,123,255,0.06)',
+            : isDone ? 'rgba(80,220,140,0.10)' : 'rgba(74,123,255,0.06)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 19, flexShrink: 0,
           border: `1px solid ${colors.border}`,
@@ -151,6 +173,40 @@ export default function AgentCard({ agentKey, state, isParallel }: Props) {
                 }}
               />
             )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Timing + token count (shown when complete) */}
+      {isDone && (elapsedMs !== undefined || tokenCount !== undefined) && (
+        <div style={{
+          display: 'flex', gap: 10, marginTop: tokens ? 8 : 4,
+          paddingTop: tokens ? 6 : 0,
+          borderTop: tokens ? '1px solid rgba(74,123,255,0.08)' : 'none',
+        }}>
+          {elapsedMs !== undefined && (
+            <span style={{ fontSize: 10, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
+              ⏱ {(elapsedMs / 1000).toFixed(1)}s
+            </span>
+          )}
+          {tokenCount !== undefined && (
+            <span style={{ fontSize: 10, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
+              ≈ {tokenCount} tokens
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Confidence bar (shown after synthesis completes) */}
+      <AnimatePresence>
+        {isDone && confidence !== undefined && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+          >
+            <ConfidenceBar confidence={confidence} />
           </motion.div>
         )}
       </AnimatePresence>

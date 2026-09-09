@@ -44,5 +44,9 @@ class AgentState(TypedDict):
     # Specialist keys chosen by user when mode == 'manual' (supports multiple)
     manual_specialists: Optional[list[str]]
 
+    # Image attached to this query (base64-encoded, for vision-capable specialists)
+    image_data: Optional[str]
+    image_mime: Optional[str]
+
     # WebSocket stream callback — injected before graph.ainvoke()
     stream_callback: Optional[Callable]

@@ -1,0 +1,353 @@
+{
+  "hemoglobin": {
+    "display_name": "Hemoglobin",
+    "category": "Complete Blood Count",
+    "aliases": ["hemoglobin", "haemoglobin", "hgb", "hb"],
+    "normal_min": 12.0,
+    "normal_max": 17.5,
+    "unit": "g/dL",
+    "description": "Oxygen-carrying protein in red blood cells"
+  },
+  "hematocrit": {
+    "display_name": "Hematocrit",
+    "category": "Complete Blood Count",
+    "aliases": ["hematocrit", "haematocrit", "hct", "pcv"],
+    "normal_min": 36.0,
+    "normal_max": 52.0,
+    "unit": "%",
+    "description": "Percentage of blood volume occupied by red blood cells"
+  },
+  "rbc": {
+    "display_name": "Red Blood Cells",
+    "category": "Complete Blood Count",
+    "aliases": ["rbc", "red blood cells", "red blood count", "erythrocytes"],
+    "normal_min": 3.8,
+    "normal_max": 5.8,
+    "unit": "10^6/μL",
+    "description": "Number of red blood cells per microliter"
+  },
+  "wbc": {
+    "display_name": "White Blood Cells",
+    "category": "Complete Blood Count",
+    "aliases": ["wbc", "white blood cells", "white blood count", "leukocytes"],
+    "normal_min": 4.0,
+    "normal_max": 11.0,
+    "unit": "10^3/μL",
+    "description": "Number of immune cells per microliter"
+  },
+  "platelets": {
+    "display_name": "Platelets",
+    "category": "Complete Blood Count",
+    "aliases": ["platelets", "plt", "thrombocytes", "platelet count"],
+    "normal_min": 150.0,
+    "normal_max": 400.0,
+    "unit": "10^3/μL",
+    "description": "Cells responsible for blood clotting"
+  },
+  "mcv": {
+    "display_name": "Mean Corpuscular Volume",
+    "category": "Complete Blood Count",
+    "aliases": ["mcv", "mean corpuscular volume", "mean cell volume"],
+    "normal_min": 80.0,
+    "normal_max": 100.0,
+    "unit": "fL",
+    "description": "Average size of red blood cells"
+  },
+  "mch": {
+    "display_name": "Mean Corpuscular Hemoglobin",
+    "category": "Complete Blood Count",
+    "aliases": ["mch", "mean corpuscular hemoglobin"],
+    "normal_min": 27.0,
+    "normal_max": 33.0,
+    "unit": "pg",
+    "description": "Average hemoglobin per red blood cell"
+  },
+  "mchc": {
+    "display_name": "MCHC",
+    "category": "Complete Blood Count",
+    "aliases": ["mchc", "mean corpuscular hemoglobin concentration"],
+    "normal_min": 31.5,
+    "normal_max": 36.0,
+    "unit": "g/dL",
+    "description": "Average hemoglobin concentration in red blood cells"
+  },
+  "glucose": {
+    "display_name": "Glucose (Fasting)",
+    "category": "Metabolic Panel",
+    "aliases": ["glucose", "blood glucose", "fasting glucose", "fbs", "fasting blood sugar"],
+    "normal_min": 70.0,
+    "normal_max": 100.0,
+    "unit": "mg/dL",
+    "description": "Blood sugar level when fasting"
+  },
+  "hba1c": {
+    "display_name": "HbA1c",
+    "category": "Diabetes",
+    "aliases": ["hba1c", "hemoglobin a1c", "haemoglobin a1c", "glycated hemoglobin", "a1c"],
+    "normal_min": 4.0,
+    "normal_max": 5.7,
+    "unit": "%",
+    "description": "3-month average blood sugar level"
+  },
+  "bun": {
+    "display_name": "BUN (Blood Urea Nitrogen)",
+    "category": "Metabolic Panel",
+    "aliases": ["bun", "blood urea nitrogen", "urea nitrogen"],
+    "normal_min": 7.0,
+    "normal_max": 20.0,
+    "unit": "mg/dL",
+    "description": "Indicator of kidney function"
+  },
+  "creatinine": {
+    "display_name": "Creatinine",
+    "category": "Metabolic Panel",
+    "aliases": ["creatinine", "serum creatinine", "s. creatinine"],
+    "normal_min": 0.6,
+    "normal_max": 1.2,
+    "unit": "mg/dL",
+    "description": "Waste product filtered by kidneys"
+  },
+  "egfr": {
+    "display_name": "eGFR",
+    "category": "Kidney Function",
+    "aliases": ["egfr", "estimated gfr", "glomerular filtration rate"],
+    "normal_min": 60.0,
+    "normal_max": 120.0,
+    "unit": "mL/min/1.73m²",
+    "description": "Estimated kidney filtration rate"
+  },
+  "sodium": {
+    "display_name": "Sodium",
+    "category": "Metabolic Panel",
+    "aliases": ["sodium", "na", "serum sodium"],
+    "normal_min": 136.0,
+    "normal_max": 145.0,
+    "unit": "mEq/L",
+    "description": "Electrolyte that regulates fluid balance"
+  },
+  "potassium": {
+    "display_name": "Potassium",
+    "category": "Metabolic Panel",
+    "aliases": ["potassium", "k", "serum potassium"],
+    "normal_min": 3.5,
+    "normal_max": 5.0,
+    "unit": "mEq/L",
+    "description": "Electrolyte essential for heart and muscle function"
+  },
+  "chloride": {
+    "display_name": "Chloride",
+    "category": "Metabolic Panel",
+    "aliases": ["chloride", "cl", "serum chloride"],
+    "normal_min": 98.0,
+    "normal_max": 107.0,
+    "unit": "mEq/L",
+    "description": "Electrolyte for maintaining fluid and acid-base balance"
+  },
+  "calcium": {
+    "display_name": "Calcium",
+    "category": "Metabolic Panel",
+    "aliases": ["calcium", "ca", "serum calcium", "total calcium"],
+    "normal_min": 8.5,
+    "normal_max": 10.5,
+    "unit": "mg/dL",
+    "description": "Mineral for bones, muscles, and nerve function"
+  },
+  "total_cholesterol": {
+    "display_name": "Total Cholesterol",
+    "category": "Lipid Panel",
+    "aliases": ["total cholesterol", "cholesterol", "chol"],
+    "normal_min": 0,
+    "normal_max": 200.0,
+    "unit": "mg/dL",
+    "description": "Total blood cholesterol level"
+  },
+  "ldl": {
+    "display_name": "LDL Cholesterol",
+    "category": "Lipid Panel",
+    "aliases": ["ldl", "ldl cholesterol", "ldl-c", "low density lipoprotein"],
+    "normal_min": 0,
+    "normal_max": 100.0,
+    "unit": "mg/dL",
+    "description": "'Bad' cholesterol — high levels increase heart disease risk"
+  },
+  "hdl": {
+    "display_name": "HDL Cholesterol",
+    "category": "Lipid Panel",
+    "aliases": ["hdl", "hdl cholesterol", "hdl-c", "high density lipoprotein"],
+    "normal_min": 40.0,
+    "normal_max": 200.0,
+    "unit": "mg/dL",
+    "description": "'Good' cholesterol — higher is better"
+  },
+  "triglycerides": {
+    "display_name": "Triglycerides",
+    "category": "Lipid Panel",
+    "aliases": ["triglycerides", "trig", "trigs", "tg"],
+    "normal_min": 0,
+    "normal_max": 150.0,
+    "unit": "mg/dL",
+    "description": "Type of fat in the blood"
+  },
+  "alt": {
+    "display_name": "ALT (Liver)",
+    "category": "Liver Function",
+    "aliases": ["alt", "alanine aminotransferase", "alanine transaminase", "sgpt"],
+    "normal_min": 7.0,
+    "normal_max": 56.0,
+    "unit": "U/L",
+    "description": "Enzyme indicating liver health"
+  },
+  "ast": {
+    "display_name": "AST (Liver)",
+    "category": "Liver Function",
+    "aliases": ["ast", "aspartate aminotransferase", "aspartate transaminase", "sgot"],
+    "normal_min": 10.0,
+    "normal_max": 40.0,
+    "unit": "U/L",
+    "description": "Enzyme elevated in liver or heart damage"
+  },
+  "alp": {
+    "display_name": "ALP",
+    "category": "Liver Function",
+    "aliases": ["alp", "alkaline phosphatase"],
+    "normal_min": 44.0,
+    "normal_max": 147.0,
+    "unit": "U/L",
+    "description": "Enzyme related to bile ducts and bones"
+  },
+  "bilirubin_total": {
+    "display_name": "Bilirubin (Total)",
+    "category": "Liver Function",
+    "aliases": ["total bilirubin", "bilirubin", "bilirubin total"],
+    "normal_min": 0.2,
+    "normal_max": 1.2,
+    "unit": "mg/dL",
+    "description": "Breakdown product of red blood cells; elevated in liver disease"
+  },
+  "albumin": {
+    "display_name": "Albumin",
+    "category": "Liver Function",
+    "aliases": ["albumin", "serum albumin"],
+    "normal_min": 3.4,
+    "normal_max": 5.4,
+    "unit": "g/dL",
+    "description": "Main protein in blood; indicates nutritional status and liver function"
+  },
+  "tsh": {
+    "display_name": "TSH (Thyroid)",
+    "category": "Thyroid",
+    "aliases": ["tsh", "thyroid stimulating hormone", "thyrotropin"],
+    "normal_min": 0.4,
+    "normal_max": 4.0,
+    "unit": "mIU/L",
+    "description": "Hormone that regulates thyroid function"
+  },
+  "t3": {
+    "display_name": "Free T3",
+    "category": "Thyroid",
+    "aliases": ["free t3", "ft3", "triiodothyronine", "t3"],
+    "normal_min": 2.3,
+    "normal_max": 4.2,
+    "unit": "pg/mL",
+    "description": "Active thyroid hormone"
+  },
+  "t4": {
+    "display_name": "Free T4",
+    "category": "Thyroid",
+    "aliases": ["free t4", "ft4", "thyroxine", "t4"],
+    "normal_min": 0.8,
+    "normal_max": 1.8,
+    "unit": "ng/dL",
+    "description": "Thyroid hormone converted to T3 in tissues"
+  },
+  "iron": {
+    "display_name": "Serum Iron",
+    "category": "Iron Studies",
+    "aliases": ["iron", "serum iron", "fe"],
+    "normal_min": 60.0,
+    "normal_max": 170.0,
+    "unit": "μg/dL",
+    "description": "Iron circulating in the blood"
+  },
+  "ferritin": {
+    "display_name": "Ferritin",
+    "category": "Iron Studies",
+    "aliases": ["ferritin", "serum ferritin"],
+    "normal_min": 12.0,
+    "normal_max": 300.0,
+    "unit": "ng/mL",
+    "description": "Stored iron; low levels indicate iron deficiency"
+  },
+  "crp": {
+    "display_name": "C-Reactive Protein",
+    "category": "Inflammation",
+    "aliases": ["crp", "c-reactive protein", "c reactive protein"],
+    "normal_min": 0,
+    "normal_max": 1.0,
+    "unit": "mg/L",
+    "description": "Marker of inflammation or infection"
+  },
+  "esr": {
+    "display_name": "ESR",
+    "category": "Inflammation",
+    "aliases": ["esr", "erythrocyte sedimentation rate", "sed rate"],
+    "normal_min": 0,
+    "normal_max": 20.0,
+    "unit": "mm/hr",
+    "description": "Inflammation marker; how fast red blood cells settle"
+  },
+  "uric_acid": {
+    "display_name": "Uric Acid",
+    "category": "Kidney Function",
+    "aliases": ["uric acid", "serum uric acid", "urate"],
+    "normal_min": 2.5,
+    "normal_max": 7.0,
+    "unit": "mg/dL",
+    "description": "High levels can cause gout and kidney stones"
+  },
+  "vitamin_d": {
+    "display_name": "Vitamin D (25-OH)",
+    "category": "Vitamins",
+    "aliases": ["vitamin d", "25-oh vitamin d", "25 hydroxyvitamin d", "25-hydroxyvitamin d", "vit d"],
+    "normal_min": 30.0,
+    "normal_max": 100.0,
+    "unit": "ng/mL",
+    "description": "Essential for bone health and immune function"
+  },
+  "vitamin_b12": {
+    "display_name": "Vitamin B12",
+    "category": "Vitamins",
+    "aliases": ["vitamin b12", "b12", "cobalamin", "vit b12"],
+    "normal_min": 200.0,
+    "normal_max": 900.0,
+    "unit": "pg/mL",
+    "description": "Essential for nerve function and red blood cell production"
+  },
+  "folate": {
+    "display_name": "Folate",
+    "category": "Vitamins",
+    "aliases": ["folate", "folic acid", "serum folate"],
+    "normal_min": 2.0,
+    "normal_max": 20.0,
+    "unit": "ng/mL",
+    "description": "B-vitamin important for cell division and DNA synthesis"
+  },
+  "inr": {
+    "display_name": "INR",
+    "category": "Coagulation",
+    "aliases": ["inr", "international normalized ratio", "pt/inr", "prothrombin time"],
+    "normal_min": 0.8,
+    "normal_max": 1.2,
+    "unit": "",
+    "description": "Measures blood clotting time; elevated if on blood thinners"
+  },
+  "testosterone": {
+    "display_name": "Testosterone (Total)",
+    "category": "Hormones",
+    "aliases": ["testosterone", "total testosterone", "serum testosterone"],
+    "normal_min": 300.0,
+    "normal_max": 1000.0,
+    "unit": "ng/dL",
+    "description": "Primary male sex hormone"
+  }
+}

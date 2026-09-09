@@ -26,6 +26,10 @@
 - [How It Works](#-how-it-works)
 - [App Screenshots](#-app-screenshots)
 - [Voice Mode](#-voice-mode)
+- [Image Scan & Vision Analysis](#-image-scan--vision-analysis)
+- [Lab Report Analysis](#-lab-report-analysis)
+- [Health Timeline](#-health-timeline)
+- [Follow-Up Notifications](#-follow-up-notifications)
 - [Tech Stack](#-tech-stack)
 - [Specialist Agents](#-specialist-agents)
 - [Project Structure](#-project-structure)
@@ -57,7 +61,11 @@ Think of it as having a **panel of AI doctors consult on your case in real time*
 | **RAG-Powered** | Every specialist searches domain-specific medical literature (NIH, NHLBI, AAP, etc.) |
 | **Live Streaming** | Watch each specialist think and respond in real time via WebSocket |
 | **3 Agent Modes** | General Doctor (quick), AI Council (auto-select), Choose Specialists (manual) |
-| **PDF Upload** | Attach lab reports or medical documents — extracted text is injected into the consultation |
+| **Image Scan** | Upload a photo of a skin condition, injury, or rash — Claude vision analyzes it alongside specialists |
+| **Lab Report Analysis** | Upload PDF or image lab reports — OCR extracts values and flags abnormal results with ranges |
+| **Health Timeline** | Persistent visual timeline of all your health events, diagnoses, medications, and symptoms |
+| **Proactive Follow-Ups** | AI schedules follow-up check-ins after consultations and notifies you when they're due |
+| **PDF Upload** | Attach medical documents — extracted text is injected directly into the consultation |
 | **Chat History** | All consultations are persisted and resumable |
 | **User Profile** | Save your medical history/allergies so all specialists have context |
 | **Voice Mode** | Speak your symptoms and hear the answer read back — full hands-free consultation |
@@ -192,6 +200,52 @@ A live overlay shows which agents are active, streams transcription in real time
 
 ---
 
+## 🔬 Image Scan & Vision Analysis
+
+Attach a photo directly in the chat — a skin condition, wound, rash, or any visible symptom. Claude's vision capability analyzes the image alongside the relevant specialist agents, combining visual assessment with medical literature retrieval for a more complete consultation.
+
+### Image Preview
+A compact vision chip appears in the message input showing a 40×40 thumbnail with a blue eye icon, confirming the image is queued for analysis before you send.
+
+![Image Scan](Screenshots/image%20scan.png)
+
+---
+
+## 📋 Lab Report Analysis
+
+Upload a lab report as a PDF or image. The backend uses **PyMuPDF** for PDF text extraction and **pytesseract OCR** for scanned images, then parses the extracted values against a built-in `normal_ranges.json` database to flag abnormal results — displayed in a structured panel with reference ranges and severity indicators.
+
+![Lab Report](Screenshots/lab_report.png)
+
+---
+
+## 📅 Health Timeline
+
+A dedicated **Health Timeline** page gives you a persistent, visual record of your entire health history — automatically populated from every consultation. Built with a liquid-glass three-column layout:
+
+- **Left column** — summary stats with an animated donut chart (symptoms, diagnoses, medications, test results) and animated count-up numbers
+- **Center column** — chronological event timeline with color-coded severity badges and expandable event cards
+- **Right column** — upcoming follow-up check-ins scheduled by the AI
+
+Health events are extracted automatically after each synthesis response using Claude Haiku and stored in Supabase. Use the backfill script (`scripts/backfill_health_events.py`) to populate the timeline from existing chat history.
+
+![Health Timeline](Screenshots/Health%20timeline.png)
+
+---
+
+## 🔔 Follow-Up Notifications
+
+After each consultation, the AI evaluates whether a follow-up is needed and schedules one automatically. Notifications appear in **two places**:
+
+1. **In-chat** — a banner appears above the message input immediately after the synthesis response (session-only, disappears on refresh)
+2. **Health Timeline right column** — persisted in Supabase, visible across sessions
+
+A GitHub Action (`.github/workflows/followup_checker.yml`) runs daily at 08:00 UTC to trigger due follow-up processing for all users.
+
+![Follow-Up Notification](Screenshots/followup%20notification.png)
+
+---
+
 ## 🛠️ Tech Stack
 
 | Layer | Technology | Purpose |
@@ -237,7 +291,7 @@ personal-doctor/
 │   │   ├── registry.py            # Maps specialist keys to agent classes
 │   │   └── specialists/           # 11 specialist agent implementations
 │   ├── api/
-│   │   └── routes/                # REST endpoints (auth, chats, messages, health)
+│   │   └── routes/                # REST endpoints (auth, chats, messages, lab_reports, timeline, follow-ups)
 │   ├── graph/
 │   │   └── builder.py             # LangGraph StateGraph — compiled once at startup
 │   ├── rag/
@@ -245,19 +299,30 @@ personal-doctor/
 │   │   ├── embedder.py            # Singleton sentence-transformer model
 │   │   └── retriever.py           # k=3 RAG retrieval per specialist
 │   ├── services/
-│   │   └── supabase_client.py     # Supabase client (service role)
+│   │   ├── supabase_client.py     # Supabase client (service role)
+│   │   ├── timeline_service.py    # Health events CRUD
+│   │   ├── followup_service.py    # Follow-up scheduling CRUD
+│   │   └── lab_parser.py          # Lab report OCR + value extraction
 │   └── utils/
-│       └── history.py             # Sliding window (last 10 messages)
+│       ├── history.py             # Sliding window (last 10 messages)
+│       └── normal_ranges.json     # Reference ranges for lab values
 ├── frontend/
 │   └── src/
-│       ├── api/                   # API clients (auth, chats, documents)
+│       ├── api/                   # API clients (auth, chats, documents, timeline)
+│       ├── pages/
+│       │   └── HealthTimelinePage.tsx  # 3-column liquid-glass timeline view
 │       └── components/
-│           ├── chat/              # Chat UI, PDF upload button
+│           ├── chat/              # Chat UI, MessageInput (image chip), FollowUpNotifications
 │           └── ui/                # GlassCard, GlassButton, TypewriterText, etc.
 ├── scripts/
 │   ├── download_sources.py        # Downloads free NIH/medical data
 │   ├── ingest_all.py              # Chunks & embeds all RAG data into ChromaDB
-│   └── verify_collections.py     # Confirms ChromaDB collections are populated
+│   ├── verify_collections.py      # Confirms ChromaDB collections are populated
+│   └── backfill_health_events.py  # One-time: extracts events from existing chat history
+├── .github/
+│   └── workflows/
+│       ├── followup_checker.yml   # Daily cron — triggers due follow-up processing
+│       └── supabase_keepalive.yml # Pings Supabase every 3 days (free tier)
 ├── supabase/
 │   └── schema.sql                 # Database schema (run in Supabase SQL editor)
 ├── rag_data/                      # Raw medical text files by specialty

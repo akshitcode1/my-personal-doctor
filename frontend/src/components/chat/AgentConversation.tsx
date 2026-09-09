@@ -273,7 +273,8 @@ export default function AgentConversation({ onStop }: Props) {
             <AgentNetworkViz
               specialists={selectedSpecialists}
               agents={agents}
-              visible={isParallel && phase === 'consulting'}
+              phase={phase}
+              visible={isParallel && (phase === 'consulting' || phase === 'synthesizing' || phase === 'complete')}
             />
 
             {/* Agent cards */}

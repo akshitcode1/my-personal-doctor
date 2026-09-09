@@ -92,6 +92,8 @@ async def websocket_endpoint(websocket: WebSocket, chat_id: str) -> None:
             global_context: str | None = payload.get("global_context") or None
             mode: str = payload.get("mode", "multi_agent")
             manual_specialists: list[str] | None = payload.get("manual_specialists") or None
+            image_data: str | None = payload.get("image_data") or None
+            image_mime: str | None = payload.get("image_mime") or None
 
             # Fetch history BEFORE saving user message so it stays out of the
             # sliding window (each node appends user_message itself as the final turn)
@@ -116,6 +118,8 @@ async def websocket_endpoint(websocket: WebSocket, chat_id: str) -> None:
                 "global_context": global_context,
                 "mode": mode,
                 "manual_specialists": manual_specialists,
+                "image_data": image_data,
+                "image_mime": image_mime,
                 "selected_specialists": [],
                 "triage_reasoning": "",
                 "specialist_responses": [],

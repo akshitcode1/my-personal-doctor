@@ -118,6 +118,52 @@ CREATE POLICY "documents_own_chats" ON public.uploaded_documents
     EXISTS (SELECT 1 FROM public.chats WHERE id = uploaded_documents.chat_id AND user_id = auth.uid())
   );
 
+-- ── HEALTH EVENTS ───────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.health_events (
+    id          UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id     UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    chat_id     UUID REFERENCES public.chats(id) ON DELETE SET NULL,
+    event_type  TEXT NOT NULL CHECK (event_type IN ('symptom', 'diagnosis', 'medication', 'test_result', 'other')),
+    title       TEXT NOT NULL,
+    description TEXT,
+    severity    TEXT CHECK (severity IN ('mild', 'moderate', 'severe')),
+    occurred_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    created_at  TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_health_events_user_id    ON public.health_events(user_id);
+CREATE INDEX IF NOT EXISTS idx_health_events_occurred_at ON public.health_events(user_id, occurred_at DESC);
+CREATE INDEX IF NOT EXISTS idx_health_events_event_type  ON public.health_events(user_id, event_type);
+
+ALTER TABLE public.health_events ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "health_events_own" ON public.health_events;
+CREATE POLICY "health_events_own" ON public.health_events
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+-- ── FOLLOW-UP SCHEDULE ───────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.follow_up_schedule (
+    id                  UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id             UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    chat_id             UUID REFERENCES public.chats(id) ON DELETE SET NULL,
+    follow_up_question  TEXT NOT NULL,
+    message_summary     TEXT,
+    scheduled_for       TIMESTAMPTZ NOT NULL,
+    urgency             TEXT NOT NULL DEFAULT 'normal' CHECK (urgency IN ('normal', 'urgent')),
+    status              TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'sent', 'dismissed', 'resolved')),
+    created_at          TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at          TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_followup_user_id      ON public.follow_up_schedule(user_id);
+CREATE INDEX IF NOT EXISTS idx_followup_scheduled    ON public.follow_up_schedule(user_id, scheduled_for, status);
+
+ALTER TABLE public.follow_up_schedule ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "followup_own" ON public.follow_up_schedule;
+CREATE POLICY "followup_own" ON public.follow_up_schedule
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
 -- ── STORAGE ─────────────────────────────────────────────────────────
 -- Run this manually in Supabase Dashboard → Storage → Create bucket:
 -- Name: medical-documents

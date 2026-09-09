@@ -1,8 +1,15 @@
 import { create } from 'zustand'
 import { AgentCardState, AppPhase } from '../types/agent'
-import { WSEvent } from '../types/websocket'
+import { WSEvent, HealthEvent } from '../types/websocket'
 
 export type ResponseMode = 'generic' | 'multi_agent' | 'manual'
+
+export interface FollowUpNotification {
+  id: string
+  question: string
+  daysFromNow: number
+  urgency: 'normal' | 'urgent'
+}
 
 interface AgentState {
   phase: AppPhase
@@ -13,6 +20,10 @@ interface AgentState {
   isGenerating: boolean
   responseMode: ResponseMode
   manualSpecialists: string[]
+  // Health events from last consultation
+  lastHealthEvents: HealthEvent[]
+  // Follow-up notifications
+  pendingFollowUps: FollowUpNotification[]
   handleEvent: (event: WSEvent) => void
   resetAgentState: () => void
   setGenerating: (v: boolean) => void
@@ -20,6 +31,7 @@ interface AgentState {
   setResponseMode: (mode: ResponseMode) => void
   toggleManualSpecialist: (key: string) => void
   setManualSpecialists: (keys: string[]) => void
+  dismissFollowUp: (id: string) => void
 }
 
 const INITIAL = {
@@ -31,15 +43,15 @@ const INITIAL = {
   isGenerating: false,
   responseMode: 'multi_agent' as ResponseMode,
   manualSpecialists: [] as string[],
+  lastHealthEvents: [] as HealthEvent[],
+  pendingFollowUps: [] as FollowUpNotification[],
 }
 
 export const useAgentStore = create<AgentState>((set) => ({
   ...INITIAL,
 
   setGenerating: (v) => set({ isGenerating: v }),
-
   setResponseMode: (mode) => set({ responseMode: mode }),
-
   setManualSpecialists: (keys) => set({ responseMode: 'manual', manualSpecialists: keys }),
 
   toggleManualSpecialist: (key) => set((s) => {
@@ -54,8 +66,13 @@ export const useAgentStore = create<AgentState>((set) => ({
     ...INITIAL,
     responseMode: s.responseMode,
     manualSpecialists: s.manualSpecialists,
+    pendingFollowUps: s.pendingFollowUps,
     phase: 'triage',
     isGenerating: true,
+  })),
+
+  dismissFollowUp: (id) => set((s) => ({
+    pendingFollowUps: s.pendingFollowUps.filter((f) => f.id !== id),
   })),
 
   handleEvent: (event: WSEvent) =>
@@ -109,7 +126,23 @@ export const useAgentStore = create<AgentState>((set) => ({
           return {
             agents: {
               ...state.agents,
-              [key]: { ...state.agents[key], status: 'complete' },
+              [key]: {
+                ...state.agents[key],
+                status: 'complete',
+                elapsedMs: event.elapsed_ms,
+                tokenCount: event.token_count,
+              },
+            },
+          }
+        }
+
+        case 'agent_confidence': {
+          const key = event.agent!
+          if (!state.agents[key]) return state
+          return {
+            agents: {
+              ...state.agents,
+              [key]: { ...state.agents[key], confidence: event.confidence },
             },
           }
         }
@@ -122,6 +155,20 @@ export const useAgentStore = create<AgentState>((set) => ({
 
         case 'synthesis_complete':
           return { phase: 'complete', finalResponse: event.full_response ?? '', isGenerating: false }
+
+        case 'health_events_extracted':
+          return { lastHealthEvents: event.events ?? [] }
+
+        case 'follow_up_scheduled': {
+          if (!event.follow_up_id) return state
+          const fu: FollowUpNotification = {
+            id: event.follow_up_id,
+            question: event.question ?? 'How are you feeling?',
+            daysFromNow: event.days_from_now ?? 2,
+            urgency: event.urgency ?? 'normal',
+          }
+          return { pendingFollowUps: [...state.pendingFollowUps, fu] }
+        }
 
         case 'clarification_checking':
           return { phase: 'triage' }
@@ -141,5 +188,6 @@ export const useAgentStore = create<AgentState>((set) => ({
     ...INITIAL,
     responseMode: s.responseMode,
     manualSpecialists: s.manualSpecialists,
+    pendingFollowUps: s.pendingFollowUps,
   })),
 }))

@@ -9,6 +9,7 @@ import AgentConversation from './AgentConversation'
 import MessageInput from './MessageInput'
 import WelcomeScreen from './WelcomeScreen'
 import VoiceConversationOverlay from './VoiceConversationOverlay'
+import FollowUpNotifications from './FollowUpNotification'
 import { useAgentStore } from '../../stores/agentStore'
 
 export default function ChatWindow() {
@@ -84,6 +85,8 @@ export default function ChatWindow() {
           )}
         </AnimatePresence>
       </div>
+
+      <FollowUpNotifications />
 
       {/* Input */}
       <div style={{

@@ -1,11 +1,17 @@
 import { useState, useEffect } from 'react'
-import { LogOut } from 'lucide-react'
+import { LogOut, Activity, MessageSquare } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { useProfileStore } from '../../stores/profileStore'
 import { supabase } from '../../api/auth'
 import ProfileModal from '../profile/ProfileModal'
+import { AppView } from '../../App'
 
-export default function Header() {
+interface Props {
+  view: AppView
+  setView: (v: AppView) => void
+}
+
+export default function Header({ view, setView }: Props) {
   const { user, signOut } = useAuthStore()
   const { displayName, avatarUrl, load } = useProfileStore()
   const [profileOpen, setProfileOpen] = useState(false)
@@ -18,6 +24,29 @@ export default function Header() {
   }
 
   const initials = (displayName || user?.email || 'U').slice(0, 2).toUpperCase()
+
+  const navBtn = (label: string, icon: React.ReactNode, target: AppView) => {
+    const active = view === target
+    return (
+      <button
+        onClick={() => setView(target)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          padding: '6px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
+          background: active ? 'rgba(74,123,255,0.12)' : 'transparent',
+          color: active ? 'var(--accent-blue)' : 'var(--text-muted)',
+          fontWeight: active ? 600 : 400,
+          fontSize: 13,
+          transition: 'all 0.15s',
+        }}
+        onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'rgba(74,123,255,0.06)' }}
+        onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
+      >
+        {icon}
+        {label}
+      </button>
+    )
+  }
 
   return (
     <>
@@ -34,10 +63,19 @@ export default function Header() {
         zIndex: 10,
         boxShadow: '0 1px 12px rgba(74,123,255,0.08)',
       }}>
-        {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 22 }}>🩺</span>
-          <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>My Personal Doctor</span>
+        {/* Logo + nav */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 22 }}>🩺</span>
+            <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>My Personal Doctor</span>
+          </div>
+
+          <div style={{ width: 1, height: 20, background: 'rgba(74,123,255,0.15)' }} />
+
+          <nav style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {navBtn('Consult', <MessageSquare size={14} />, 'chat')}
+            {navBtn('Health Timeline', <Activity size={14} />, 'timeline')}
+          </nav>
         </div>
 
         {/* Right side */}

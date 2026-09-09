@@ -10,7 +10,11 @@ export function useWebSocket(chatId: string | null) {
   const { handleEvent, startGeneration, setGenerating } = useAgentStore()
   const { addMessage, renameChat } = useChatStore()
 
-  const buildPayload = useCallback((content: string) => {
+  const buildPayload = useCallback((
+    content: string,
+    imageData?: string,
+    imageMime?: string,
+  ) => {
     const token = useAuthStore.getState().session?.access_token ?? ''
     const globalContext = useProfileStore.getState().globalContext || undefined
     const { responseMode, manualSpecialists } = useAgentStore.getState()
@@ -23,16 +27,14 @@ export function useWebSocket(chatId: string | null) {
       manual_specialists: responseMode === 'manual' && manualSpecialists.length > 0
         ? manualSpecialists
         : undefined,
+      image_data: imageData || undefined,
+      image_mime: imageMime || undefined,
     })
   }, [])
 
   const connect = useCallback((): WebSocket | null => {
     if (!chatId) return null
-
-    // Reuse existing OPEN connection
     if (wsRef.current?.readyState === WebSocket.OPEN) return wsRef.current
-
-    // Close any stale connection
     if (wsRef.current) {
       wsRef.current.onclose = null
       wsRef.current.close()
@@ -77,15 +79,18 @@ export function useWebSocket(chatId: string | null) {
 
     ws.onerror = () => console.error('WebSocket error')
     ws.onclose = () => { wsRef.current = null }
-
     wsRef.current = ws
     return ws
   }, [chatId, handleEvent, addMessage, renameChat])
 
-  const sendMessage = useCallback((content: string) => {
+  const sendMessage = useCallback((
+    content: string,
+    imageData?: string,
+    imageMime?: string,
+    imagePreviewUrl?: string,
+  ) => {
     if (!chatId || !content.trim()) return
 
-    // Show triage spinner immediately (don't wait for backend event)
     startGeneration()
 
     addMessage({
@@ -93,18 +98,17 @@ export function useWebSocket(chatId: string | null) {
       chat_id: chatId,
       role: 'user',
       content,
+      image_url: imagePreviewUrl,
       created_at: new Date().toISOString(),
     })
 
-    const payload = buildPayload(content)
-
+    const payload = buildPayload(content, imageData, imageMime)
     const ws = connect()
     if (!ws) return
 
     if (ws.readyState === WebSocket.OPEN) {
       ws.send(payload)
     } else {
-      // Connection is still opening — wait for it, then send
       ws.addEventListener('open', () => ws.send(payload), { once: true })
     }
   }, [chatId, connect, startGeneration, addMessage, buildPayload])
@@ -116,7 +120,6 @@ export function useWebSocket(chatId: string | null) {
       wsRef.current = null
     }
     setGenerating(false)
-    // Reconnect silently for next message
     setTimeout(() => connect(), 100)
   }, [connect, setGenerating])
 

@@ -1,6 +1,6 @@
 import json
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import anthropic
 
@@ -26,12 +26,38 @@ from backend.utils.prompt_templates import (
     get_specialist_system_prompt,
 )
 
-# AsyncAnthropic — never blocks the event loop
 _client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
 
 
 def _ts() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _compute_confidence(specialist_response: str, synthesis: str) -> float:
+    """Heuristic: % of specialist's key words that appear in the synthesis."""
+    stop = {
+        'the', 'a', 'an', 'is', 'it', 'to', 'of', 'and', 'in', 'for', 'with',
+        'on', 'at', 'by', 'as', 'be', 'was', 'are', 'were', 'this', 'that',
+        'have', 'has', 'had', 'not', 'or', 'but', 'if', 'from', 'can', 'will',
+        'may', 'should', 'your', 'you', 'we', 'they', 'their', 'its', 'also',
+        'which', 'who', 'when', 'what', 'how', 'would', 'could', 'patient',
+        'doctor', 'medical', 'health', 'recommend', 'please', 'note', 'important',
+    }
+
+    def key_words(text: str) -> set:
+        return {
+            w.strip('.,!?;:()[]"\'')
+            for w in text.lower().split()
+            if len(w) > 4 and w.strip('.,!?;:()[]"\'') not in stop
+        }
+
+    spec_words = key_words(specialist_response)
+    synth_words = key_words(synthesis)
+    if not spec_words:
+        return 0.5
+    overlap = len(spec_words & synth_words)
+    raw = min(overlap / len(spec_words), 1.0)
+    return round(max(raw, 0.3), 2)
 
 
 # ── TRIAGE NODE ───────────────────────────────────────────────────────────────
@@ -41,7 +67,6 @@ async def triage_node(state: AgentState) -> dict:
     if cb:
         await cb({"type": "triage_start", "timestamp": _ts()})
 
-    # Generic mode: skip triage LLM — route straight to GP
     if state.get("mode") == "generic":
         if cb:
             await cb({
@@ -51,7 +76,6 @@ async def triage_node(state: AgentState) -> dict:
             })
         return {"selected_specialists": ["general_practitioner"], "triage_reasoning": "generic mode"}
 
-    # Manual mode: user chose one or more specialists — skip triage LLM
     if state.get("mode") == "manual":
         raw = state.get("manual_specialists") or []
         specialists = [s for s in raw if s in SPECIALIST_COLLECTIONS] or ["general_practitioner"]
@@ -66,13 +90,11 @@ async def triage_node(state: AgentState) -> dict:
     response = await _client.messages.create(
         model=TRIAGE_MODEL,
         max_tokens=TRIAGE_MAX_TOKENS,
-        system=[
-            {
-                "type": "text",
-                "text": TRIAGE_SYSTEM_PROMPT,
-                "cache_control": {"type": "ephemeral"},
-            }
-        ],
+        system=[{
+            "type": "text",
+            "text": TRIAGE_SYSTEM_PROMPT,
+            "cache_control": {"type": "ephemeral"},
+        }],
         messages=[{"role": "user", "content": state["user_message"]}],
     )
 
@@ -102,22 +124,14 @@ async def triage_node(state: AgentState) -> dict:
 # ── CLARIFICATION NODE ───────────────────────────────────────────────────────
 
 async def clarification_node(state: AgentState) -> dict:
-    """
-    Runs after triage. Uses Haiku to decide if 2-3 targeted follow-up questions
-    would improve the consultation. If yes, emits clarification_needed and stops
-    the graph. If no, the conditional edge proceeds to specialists.
-    """
     cb = state.get("stream_callback")
 
-    # Generic and manual modes: no clarification, proceed immediately
     if state.get("mode") in ("generic", "manual"):
         return {"needs_clarification": False, "clarification_questions": []}
 
     if cb:
         await cb({"type": "clarification_checking", "timestamp": _ts()})
     history = state.get("message_history", [])
-
-    # Build conversation context so it doesn't re-ask after user has already answered
     context_msgs = [*get_sliding_window(history), {"role": "user", "content": state["user_message"]}]
 
     response = await _client.messages.create(
@@ -143,20 +157,15 @@ async def clarification_node(state: AgentState) -> dict:
 
     if needs and questions:
         if cb:
-            await cb({
-                "type": "clarification_needed",
-                "questions": questions,
-                "timestamp": _ts(),
-            })
+            await cb({"type": "clarification_needed", "questions": questions, "timestamp": _ts()})
         return {"needs_clarification": True, "clarification_questions": questions}
 
     return {"needs_clarification": False, "clarification_questions": []}
 
 
-# ── CHAT TITLE GENERATOR (standalone, called outside graph) ──────────────────
+# ── CHAT TITLE GENERATOR ─────────────────────────────────────────────────────
 
 async def generate_chat_title(user_message: str) -> str:
-    """Generate a concise 4-6 word chat title from the first user message."""
     try:
         response = await _client.messages.create(
             model=TRIAGE_MODEL,
@@ -167,7 +176,6 @@ async def generate_chat_title(user_message: str) -> str:
         title = response.content[0].text.strip().strip('"\'')
         return title[:70] if title else user_message[:50]
     except Exception:
-        # Fallback: first 50 chars of message, trimmed to word boundary
         clean = user_message.strip().replace('\n', ' ')
         if len(clean) <= 50:
             return clean
@@ -176,10 +184,9 @@ async def generate_chat_title(user_message: str) -> str:
         return (truncated[:last_space] + '…') if last_space > 15 else truncated + '…'
 
 
-# ── DOCUMENT SUMMARIZER (standalone, called outside graph) ────────────────────
+# ── DOCUMENT SUMMARIZER ───────────────────────────────────────────────────────
 
 async def summarize_document(extracted_text: str) -> str:
-    """Generate a plain-English summary of a medical document using Haiku."""
     preview = extracted_text[:3500]
     response = await _client.messages.create(
         model=TRIAGE_MODEL,
@@ -194,6 +201,107 @@ async def summarize_document(extracted_text: str) -> str:
     return response.content[0].text.strip()
 
 
+# ── POST-SYNTHESIS PROCESSING ─────────────────────────────────────────────────
+
+_HEALTH_EXTRACTION_PROMPT = (
+    "You are a medical data extractor. From this consultation, extract health events and "
+    "decide if a follow-up check-in is needed.\n\n"
+    "Return ONLY valid JSON, no other text:\n"
+    "{\n"
+    '  "health_events": [\n'
+    '    {"event_type": "symptom|diagnosis|medication|test_result|other",\n'
+    '     "title": "Short title ≤60 chars",\n'
+    '     "description": "One sentence",\n'
+    '     "severity": "mild|moderate|severe|null"}\n'
+    "  ],\n"
+    '  "follow_up": {\n'
+    '    "needed": true,\n'
+    '    "question": "Brief personalised check-in question",\n'
+    '    "days_from_now": 2,\n'
+    '    "urgency": "normal|urgent"\n'
+    "  }\n"
+    "}\n\n"
+    "Follow-up is needed when: symptoms are acute, a treatment was started, or monitoring is advised."
+)
+
+
+async def _run_post_synthesis(state: AgentState, synthesis: str, cb) -> None:
+    """Confidence scoring (heuristic) + health event extraction + follow-up scheduling."""
+
+    # 1. Confidence scoring — zero LLM cost
+    for r in state.get("specialist_responses", []):
+        score = _compute_confidence(r["response"], synthesis)
+        if cb:
+            await cb({
+                "type": "agent_confidence",
+                "agent": r["specialist"],
+                "confidence": score,
+                "timestamp": _ts(),
+            })
+
+    # 2. Health events + follow-up (one Haiku call)
+    try:
+        context_text = (
+            f"Patient query: {state['user_message']}\n\n"
+            f"Doctor's response:\n{synthesis[:2000]}"
+        )
+        response = await _client.messages.create(
+            model=TRIAGE_MODEL,
+            max_tokens=600,
+            system=_HEALTH_EXTRACTION_PROMPT,
+            messages=[{"role": "user", "content": context_text}],
+        )
+        raw = response.content[0].text.strip()
+        try:
+            extracted = json.loads(raw)
+        except json.JSONDecodeError:
+            match = re.search(r"\{.*\}", raw, re.DOTALL)
+            extracted = json.loads(match.group()) if match else {}
+
+        health_events: list = extracted.get("health_events", [])
+        follow_up: dict = extracted.get("follow_up", {})
+
+        # Store health events
+        if health_events and state.get("user_id") and state.get("chat_id"):
+            try:
+                from backend.services.timeline_service import create_health_events
+                await create_health_events(state["user_id"], state["chat_id"], health_events)
+            except Exception:
+                pass
+
+        if cb and health_events:
+            await cb({"type": "health_events_extracted", "events": health_events, "timestamp": _ts()})
+
+        # Schedule follow-up
+        if follow_up.get("needed") and state.get("user_id") and state.get("chat_id"):
+            try:
+                from backend.services.followup_service import create_follow_up
+                days = max(1, min(int(follow_up.get("days_from_now", 2)), 14))
+                scheduled_for = (datetime.now(timezone.utc) + timedelta(days=days)).isoformat()
+                fu_id = await create_follow_up(
+                    user_id=state["user_id"],
+                    chat_id=state["chat_id"],
+                    question=follow_up.get("question", "How are you feeling?"),
+                    scheduled_for=scheduled_for,
+                    urgency=follow_up.get("urgency", "normal"),
+                    message_summary=state["user_message"][:200],
+                )
+                if cb and fu_id:
+                    await cb({
+                        "type": "follow_up_scheduled",
+                        "follow_up_id": fu_id,
+                        "question": follow_up.get("question"),
+                        "days_from_now": days,
+                        "urgency": follow_up.get("urgency", "normal"),
+                        "timestamp": _ts(),
+                    })
+            except Exception:
+                pass
+
+    except Exception:
+        pass
+
+
 # ── SPECIALIST NODE FACTORY ───────────────────────────────────────────────────
 
 def make_specialist_node(specialist_key: str):
@@ -204,6 +312,7 @@ def make_specialist_node(specialist_key: str):
     async def specialist_node(state: AgentState) -> dict:
         cb = state.get("stream_callback")
         user_msg = state["user_message"]
+        start_time = datetime.now(timezone.utc)
 
         if cb:
             await cb({"type": "agent_start", "agent": specialist_key,
@@ -221,18 +330,33 @@ def make_specialist_node(specialist_key: str):
         doc_ctx = state.get("document_context") or ""
         global_ctx = state.get("global_context") or ""
 
-        user_content_parts = []
+        parts = []
         if global_ctx:
-            user_content_parts.append(f"Patient background information:\n{global_ctx}")
+            parts.append(f"Patient background information:\n{global_ctx}")
         if doc_ctx:
-            user_content_parts.append(f"Patient's uploaded medical records:\n{doc_ctx}")
+            parts.append(f"Patient's uploaded medical records:\n{doc_ctx}")
         if context:
-            user_content_parts.append(f"Relevant medical literature:\n{context}")
+            parts.append(f"Relevant medical literature:\n{context}")
+        parts.append(f"Patient query: {user_msg}")
+        user_content_text = "\n\n".join(parts)
 
-        user_content_parts.append(f"Patient query: {user_msg}")
-        user_content = "\n\n".join(user_content_parts)
+        # Inject vision block if image present (all specialists receive it)
+        image_data = state.get("image_data")
+        image_mime = state.get("image_mime") or "image/jpeg"
+        if image_data:
+            user_content: object = [
+                {"type": "image", "source": {
+                    "type": "base64",
+                    "media_type": image_mime,
+                    "data": image_data,
+                }},
+                {"type": "text", "text": user_content_text},
+            ]
+        else:
+            user_content = user_content_text
 
         full_response = ""
+        token_count = 0
         async with _client.messages.stream(
             model=SPECIALIST_MODEL,
             max_tokens=SPECIALIST_MAX_TOKENS,
@@ -245,13 +369,16 @@ def make_specialist_node(specialist_key: str):
         ) as stream:
             async for text in stream.text_stream:
                 full_response += text
+                token_count += 1
                 if cb:
                     await cb({"type": "agent_token", "agent": specialist_key,
                               "token": text, "timestamp": _ts()})
 
+        elapsed_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
         if cb:
             await cb({"type": "agent_complete", "agent": specialist_key,
-                      "response": full_response, "timestamp": _ts()})
+                      "response": full_response, "elapsed_ms": elapsed_ms,
+                      "token_count": token_count, "timestamp": _ts()})
 
         return {
             "specialist_responses": [SpecialistResponse(
@@ -303,7 +430,9 @@ async def synthesis_node(state: AgentState) -> dict:
                 await cb({"type": "synthesis_token", "token": text, "timestamp": _ts()})
 
     if cb:
-        await cb({"type": "synthesis_complete", "full_response": full_response,
-                  "timestamp": _ts()})
+        await cb({"type": "synthesis_complete", "full_response": full_response, "timestamp": _ts()})
+
+    # Post-synthesis: confidence + health events + follow-up (non-blocking best-effort)
+    await _run_post_synthesis(state, full_response, cb)
 
     return {"final_response": full_response}

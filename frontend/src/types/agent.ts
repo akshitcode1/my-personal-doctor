@@ -5,6 +5,9 @@ export interface AgentCardState {
   displayName: string
   thinkingStep: string
   tokens: string
+  elapsedMs?: number
+  tokenCount?: number
+  confidence?: number
 }
 
 export type AppPhase = 'idle' | 'triage' | 'consulting' | 'synthesizing' | 'complete' | 'clarifying'
